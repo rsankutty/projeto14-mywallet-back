@@ -1,40 +1,53 @@
 import db from "../db_config/database.js";
+import { ObjectId } from "mongodb";
+import dayjs from "dayjs";
+
 
 export async function getCashFlow (req, res) {
+  const { authorization } = req.headers;
+	const token = authorization?.replace('Bearer ', '');
+
+  if (!token) return res.sendStatus(401);
+	const userWithToken = await db.collection('sessions').findOne({ token });
+
+	if (!userWithToken) return res.sendStatus(401);
+
+  const {userId} = userWithToken
 
   try {
-    const cashflow = await db.collection("cashflow").find({ user_id: authId }).toArray();
-    return res.send(movements);
+    const cashflow = await db.collection("cashflow").find({ userId }).toArray();
+    return res.send(cashflow);
   } catch (err) {
     return res.status(500).send(err);
   }
 }
 
-export async function store (req, res) {
-  const { description, value, error } = validateStoreMovementSchema(req.body);
-  const { type } = req.params;
 
-  const authId = res.locals.authId;
+export async function addFlow (req, res) {
+  const { authorization } = req.headers;
+	const token = authorization?.replace('Bearer ', '');
+  const { value, description, type } =  req.body;
 
-  if (!type || (type !== 'entry' && type !== 'output')) return res.status(422).send('Insira um tipo válido');
+  if (!token) return res.sendStatus(401);
+	const userWithToken = await db.collection('sessions').findOne({ token });
 
-  if (error) return res.status(422).send(error);
+	if (!userWithToken) return res.sendStatus(401);
 
   try {
-    const user = await db.collection("users").findOne({ _id: authId });
+    const {userId} = userWithToken
+    const user = await db.collection("users").findOne({ _id: ObjectId(userId) });
 
-    const movement = new Movement(
-      user._id,
-      description,
+    await db.collection('cashflow').insertOne({
+      date: dayjs(Date.now()).format('DD/MM'),
       value,
-      type
-    )
-
-    await db.collection("movements").insertOne(movement);
+      description,
+      type,
+      userId
+    });
 
     return res.sendStatus(201);
   } catch (error) {
-    console.log(error);
-    return res.status(500).send(error);
+    console.log(err);
+    return res.status(500).send(err);
   }
 }
