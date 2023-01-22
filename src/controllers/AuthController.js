@@ -37,8 +37,7 @@ export async function login(req, res) {
 
     const userToken = await db.collection("sessions").findOne({ userId: user._id })
     if (userToken) {
-      delete userToken._id;
-      return res.status(200).send(userToken)
+      return res.status(200).send({name:user.name, token:userToken.token})
     }
 
     const token = uuid();
@@ -47,9 +46,9 @@ export async function login(req, res) {
       token
     })
 
-    res.status(200).send({ token, userId: user._id });
+    res.status(200).send({ token, name: user.name });
 
-  } catch (error) {
-    return res.status(500).send(error);
+  } catch (err) {
+    return res.status(500).send(err);
   }
 }
