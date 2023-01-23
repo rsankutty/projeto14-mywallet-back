@@ -5,16 +5,11 @@ import dayjs from "dayjs";
 
 export async function getCashFlow (req, res) {
   const { authorization } = req.headers;
-	const token = authorization?.replace('Bearer ', '');
-
-  if (!token) return res.sendStatus(401);
-	const userWithToken = await db.collection('sessions').findOne({ token });
-
-	if (!userWithToken) return res.sendStatus(401);
-
-  const {userId} = userWithToken
+	const token = authorization.replace('Bearer ', '');
 
   try {
+    const userWithToken = await db.collection('sessions').findOne({ token });
+    const {userId} = userWithToken
     const cashflow = await db.collection("cashflow").find({ userId }).toArray();
     return res.send(cashflow);
   } catch (err) {
@@ -25,15 +20,11 @@ export async function getCashFlow (req, res) {
 
 export async function addFlow (req, res) {
   const { authorization } = req.headers;
-	const token = authorization?.replace('Bearer ', '');
+	const token = authorization.replace('Bearer ', '');
   const { value, description, type } =  req.body;
 
-  if (!token) return res.sendStatus(401);
-	const userWithToken = await db.collection('sessions').findOne({ token });
-
-	if (!userWithToken) return res.sendStatus(401);
-
   try {
+    const userWithToken = await db.collection('sessions').findOne({ token });
     const {userId} = userWithToken
     const user = await db.collection("users").findOne({ _id: ObjectId(userId) });
 
